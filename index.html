@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KICKFLIP" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-512.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <title>KICKFLIP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #1a1a2e;
+      font-family: 'Press Start 2P', monospace;
+      touch-action: none;
+    }
+    #canvas-container {
+      position: fixed; inset: 0;
+    }
+    #canvas-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    #ui-overlay {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #loading-screen {
+      position: fixed; inset: 0;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      color: #e0ff00;
+    }
+    #loading-screen h1 {
+      font-size: clamp(24px, 6vw, 48px);
+      letter-spacing: 8px;
+      margin-bottom: 24px;
+      text-shadow: 0 0 20px #e0ff00;
+    }
+    #loading-bar-wrap {
+      width: 200px; height: 8px;
+      border: 2px solid #e0ff00;
+      background: transparent;
+    }
+    #loading-bar {
+      height: 100%;
+      background: #e0ff00;
+      width: 0%;
+      transition: width 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <h1>KICKFLIP</h1>
+    <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
+  </div>
+  <div id="canvas-container"></div>
+  <div id="ui-overlay"></div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
