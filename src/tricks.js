@@ -65,7 +65,8 @@ export class TrickSystem {
     this.isAirborne = true;
     this.currentTrick = trickId;
     this.trickProgress = 0;
-    this.velocityY = Math.sqrt(2 * Math.abs(this.gravity) * (t.airTime * t.airTime * Math.abs(this.gravity) / 2));
+    // v0 such that total air time = t.airTime (rises for half, falls for half)
+    this.velocityY = Math.abs(this.gravity) * (t.airTime / 2);
     this.board.isAirborne = true;
     this.trickDuration = t.airTime;
     this._startFlipAnim(t);
@@ -125,22 +126,31 @@ export class TrickSystem {
       this.isAirborne = false;
       this.board.isAirborne = false;
       const landed = this.currentTrick;
-      const isClean = this.nearPeakTimer > 0.05 && this.nearPeakTimer < 0.2;
+      const flipProgress = Math.min(1, this._animTime / Math.max(0.01, this._animDuration));
+      const isClean = this.nearPeakTimer > 0.04;
+      // Slam if flip wasn't near-complete (only for flip tricks, not ollies/shuvits)
+      const t = TRICKS[landed];
+      const isFlipTrick = t && Math.abs(t.flipX) > 1;
+      const isSlam = isFlipTrick && flipProgress < 0.8;
 
-      // Snap to upright
       this.board.flipAngle = 0;
       this.board.bodyRotation = 0;
-
       this.currentTrick = null;
       this.trickQueue = [];
       this.nearPeakTimer = 0;
       this.velocityY = 0;
 
+      if (isSlam) {
+        this.audio?.play('slam');
+        if (this.onSlam) this.onSlam();
+        return;
+      }
+
       this.board.triggerLandFlash();
       this.audio?.play(isClean ? 'land_clean' : 'land');
 
       if (this.onTrickComplete) {
-        this.onTrickComplete(TRICKS[landed], isClean);
+        this.onTrickComplete(t, isClean);
       }
     }
 

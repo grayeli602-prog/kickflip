@@ -89,13 +89,10 @@ async function init() {
   tricks.onTrickComplete = (trick, isClean) => {
     if (!trick) return;
     const result = combo.trickLanded(trick, isClean);
-    const masteryCount = progression.recordTrick(trick.name.toLowerCase().replace(/\s/g,''), isClean);
+    progression.recordTrick(trick.name.toLowerCase().replace(/\s/g, ''), isClean);
     progression.addXP(result.earned);
 
-    if (isClean) {
-      ui.showClean();
-      audio.play('land_clean');
-    }
+    if (isClean) ui.showClean();
 
     // Rank up?
     const newRankIndex = progression.getRankIndex();
@@ -115,7 +112,12 @@ async function init() {
       progression.getRankName(), progression.getRankProgress());
   };
 
-  tricks.onSlam = () => {};
+  tricks.onSlam = () => {
+    const lost = combo.slam();
+    if (lost) audio.play('slam');
+    ui.showSlam();
+    board.triggerSlam();
+  };
 
   setLoadProgress(1.0);
 
