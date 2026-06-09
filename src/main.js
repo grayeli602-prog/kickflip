@@ -134,12 +134,9 @@ async function init() {
   requestAnimationFrame(loop);
 }
 
-function handleInput(trickId, type) {
+function handleInput(action) {
   if (!gameRunning) return;
-  if (type === 'tap' || type === 'double') {
-    tricks.executeTrick(trickId);
-    audio.play('pop');
-  }
+  tricks.handleButton(action);
 }
 
 function loop(timestamp) {

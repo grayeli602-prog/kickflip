@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Tier colors/materials for each board part (10 tiers each)
+// Tier colors for each board part (10 tiers each)
 const DECK_TIERS = [
   { color: 0x8B6914, emissive: 0x000000, name: 'Worn Wood' },
   { color: 0xA07828, emissive: 0x000000, name: 'Raw Wood' },
@@ -14,12 +14,12 @@ const DECK_TIERS = [
   { color: 0xFF00FF, emissive: 0x440044, name: 'Mythic' },
 ];
 const WHEEL_TIERS = [
-  { color: 0x888888, emissive: 0x000000, name: 'Grey' },
-  { color: 0xCCCCCC, emissive: 0x000000, name: 'White' },
+  { color: 0xdddddd, emissive: 0x000000, name: 'White' },
+  { color: 0xbbbbcc, emissive: 0x000000, name: 'Off-White' },
   { color: 0xFFAA00, emissive: 0x000000, name: 'Yellow' },
   { color: 0xFF4400, emissive: 0x000000, name: 'Orange' },
   { color: 0x00FFAA, emissive: 0x001111, name: 'Teal' },
-  { color: 0xCCCCFF, emissive: 0x111122, name: 'Chrome' },
+  { color: 0xDDDDFF, emissive: 0x111122, name: 'Chrome' },
   { color: 0xFFFFFF, emissive: 0x222222, name: 'Glowing White' },
   { color: 0x00FFFF, emissive: 0x003333, name: 'Cyan Glow' },
   { color: 0xFF00FF, emissive: 0x330033, name: 'Magenta Glow' },
@@ -56,7 +56,6 @@ export class Board {
     this.group = new THREE.Group();
     scene.add(this.group);
 
-    // Tiers (index 0-9)
     this.deckTier = 0;
     this.wheelTier = 0;
     this.truckTier = 0;
@@ -64,67 +63,63 @@ export class Board {
 
     this._buildMeshes();
 
-    // State for animation
     this.baseY = 0;
-    this.airTime = 0;
     this.isAirborne = false;
     this.flipAngle = 0;
-    this.flipAxis = new THREE.Vector3(1, 0, 0);
-    this.bodyRotation = 0; // board body spin
+    this.bodyRotation = 0;
     this.tiltAngle = 0;
     this.landFlash = 0;
     this.slamTime = 0;
     this.isSlamming = false;
-    this.trailParticles = [];
   }
 
   _buildMeshes() {
-    // Clear old meshes
     while (this.group.children.length) this.group.remove(this.group.children[0]);
 
-    // Grip tape (top face)
+    // Grip tape
     const gripGeo = new THREE.BoxGeometry(2.8, 0.06, 0.82);
-    this.gripMesh = new THREE.Mesh(gripGeo, this._makeMat(GRIP_TIERS[this.gripTier]));
+    this.gripMesh = new THREE.Mesh(gripGeo, this._makeMat(GRIP_TIERS[this.gripTier], 'grip'));
     this.gripMesh.position.y = 0.08;
     this.group.add(this.gripMesh);
 
     // Deck
     const deckGeo = new THREE.BoxGeometry(2.8, 0.12, 0.8);
-    this.deckMesh = new THREE.Mesh(deckGeo, this._makeMat(DECK_TIERS[this.deckTier]));
+    this.deckMesh = new THREE.Mesh(deckGeo, this._makeMat(DECK_TIERS[this.deckTier], 'deck'));
     this.deckMesh.position.y = 0;
     this.deckMesh.castShadow = true;
-    this.deckMesh.receiveShadow = false;
     this.group.add(this.deckMesh);
 
     // Nose/tail kick
     const kickGeo = new THREE.BoxGeometry(0.3, 0.08, 0.7);
-    const kickMat = this._makeMat(DECK_TIERS[this.deckTier]);
-    for (let s of [-1, 1]) {
+    const kickMat = this._makeMat(DECK_TIERS[this.deckTier], 'deck');
+    for (const s of [-1, 1]) {
       const kick = new THREE.Mesh(kickGeo, kickMat);
       kick.position.set(s * 1.45, 0.06, 0);
       kick.rotation.z = s * 0.2;
+      kick.castShadow = true;
       this.group.add(kick);
     }
 
-    // Trucks (2)
+    // Trucks
     this.truckMeshes = [];
-    for (let s of [-1, 1]) {
+    for (const s of [-1, 1]) {
       const baseGeo = new THREE.BoxGeometry(0.4, 0.1, 0.9);
-      const base = new THREE.Mesh(baseGeo, this._makeMat(TRUCK_TIERS[this.truckTier]));
+      const base = new THREE.Mesh(baseGeo, this._makeMat(TRUCK_TIERS[this.truckTier], 'truck'));
       base.position.set(s * 0.95, -0.12, 0);
+      base.castShadow = true;
       this.group.add(base);
       this.truckMeshes.push(base);
 
-      const axleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.1, 6);
-      const axle = new THREE.Mesh(axleGeo, this._makeMat(TRUCK_TIERS[this.truckTier]));
+      const axleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.1, 8);
+      const axle = new THREE.Mesh(axleGeo, this._makeMat(TRUCK_TIERS[this.truckTier], 'truck'));
       axle.position.set(s * 0.95, -0.18, 0);
       axle.rotation.x = Math.PI / 2;
+      axle.castShadow = true;
       this.group.add(axle);
 
-      // Wheels (2 per truck)
-      for (let ws of [-1, 1]) {
-        const wheelGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.12, 8);
-        const wheel = new THREE.Mesh(wheelGeo, this._makeMat(WHEEL_TIERS[this.wheelTier]));
+      for (const ws of [-1, 1]) {
+        const wheelGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.14, 12);
+        const wheel = new THREE.Mesh(wheelGeo, this._makeMat(WHEEL_TIERS[this.wheelTier], 'wheel'));
         wheel.position.set(s * 0.95, -0.18, ws * 0.52);
         wheel.rotation.x = Math.PI / 2;
         wheel.castShadow = true;
@@ -132,23 +127,17 @@ export class Board {
         this.truckMeshes.push(wheel);
       }
     }
-
-    // Shadow plane
-    const shadowGeo = new THREE.PlaneGeometry(3, 1.2);
-    const shadowMat = new THREE.MeshBasicMaterial({
-      color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false
-    });
-    this.shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
-    this.shadowMesh.rotation.x = -Math.PI / 2;
-    this.shadowMesh.position.y = -0.01;
-    this.group.add(this.shadowMesh);
   }
 
-  _makeMat(tier) {
-    return new THREE.MeshToonMaterial({
+  _makeMat(tier, type) {
+    const roughness = type === 'truck' ? 0.3 : type === 'wheel' ? 0.45 : type === 'grip' ? 0.95 : 0.82;
+    const metalness = type === 'truck' ? 0.8 : type === 'wheel' ? 0.15 : 0.02;
+    return new THREE.MeshStandardMaterial({
       color: tier.color,
       emissive: new THREE.Color(tier.emissive),
       emissiveIntensity: tier.emissive > 0 ? 0.5 : 0,
+      roughness,
+      metalness,
     });
   }
 
@@ -161,24 +150,16 @@ export class Board {
     this._buildMeshes();
   }
 
-  setPosition(x, y, z) {
-    this.group.position.set(x, y, z);
-  }
+  setPosition(x, y, z) { this.group.position.set(x, y, z); }
+  getPosition() { return this.group.position; }
 
-  getPosition() {
-    return this.group.position;
-  }
-
-  // Called each frame; tricksystem writes to flipAngle/bodyRotation
   update(dt) {
-    // Land flash decay
     if (this.landFlash > 0) {
       this.landFlash -= dt * 4;
       const f = Math.max(0, this.landFlash);
       this.deckMesh.material.emissiveIntensity = f * 3;
     }
 
-    // Slam tumble
     if (this.isSlamming) {
       this.slamTime += dt;
       this.group.rotation.x += dt * 8;
@@ -192,29 +173,12 @@ export class Board {
         this.group.position.y = this.baseY;
       }
     } else {
-      // Smooth tilt from velocity
-      const targetTilt = this.tiltAngle;
-      this.group.rotation.z += (targetTilt - this.group.rotation.z) * 0.15;
-
-      // Board flip/spin during trick
+      this.group.rotation.z += (this.tiltAngle - this.group.rotation.z) * 0.15;
       this.group.rotation.x = this.flipAngle;
       this.group.rotation.y = this.bodyRotation;
     }
-
-    // Shadow scale/opacity based on height
-    const h = this.group.position.y - this.baseY;
-    const s = Math.max(0.3, 1 - h * 0.05);
-    this.shadowMesh.scale.set(s, s, 1);
-    this.shadowMesh.material.opacity = 0.3 * s;
-    this.shadowMesh.position.y = this.baseY - this.group.position.y - 0.19;
   }
 
-  triggerLandFlash() {
-    this.landFlash = 1.0;
-  }
-
-  triggerSlam() {
-    this.isSlamming = true;
-    this.slamTime = 0;
-  }
+  triggerLandFlash() { this.landFlash = 1.0; }
+  triggerSlam() { this.isSlamming = true; this.slamTime = 0; }
 }
